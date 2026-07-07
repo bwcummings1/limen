@@ -404,6 +404,7 @@ footer{
       <span class="chip">zero dependencies · pure stdlib</span>
       <span class="chip">runs &amp; tests offline</span>
       <a class="chip cta" href="#use">python -m limen demo</a>
+      <a class="chip cta" href="https://github.com/bwcummings1/limen">github.com/bwcummings1/limen</a>
     </div>
   </div>
 
@@ -437,7 +438,7 @@ footer{
     <div class="tick reveal">
       <div class="phase"><span class="n">1</span><h3>Wake</h3><p>Advance the clock. Roll the token-budget day.</p></div>
       <div class="phase"><span class="n">2</span><h3>Futures</h3><p>The timekeeper fires what is due: reminders, recurrences, tripped <b>dead-man switches</b>. Each arrives as a percept from <b>future_self</b> — a message the mind wrote to a later version of itself.</p></div>
-      <div class="phase"><span class="n">3</span><h3>Sense</h3><p>Drain the inbox. User messages and external events become percepts; everything fresh is logged.</p></div>
+      <div class="phase"><span class="n">3</span><h3>Sense</h3><p>Poll the senses and drain the inbox. User messages, watched files, and feed digests become percepts — channels supply salience <b>hints</b>; the auction decides what matters. Everything fresh is logged.</p></div>
       <div class="phase"><span class="n">4</span><h3>Bid</h3><p>Every specialist runs <b>concurrently</b> on an identical view of the conscious contents and returns proposals. LLM work happens here — its output must then compete for consciousness like everything else. A crashing specialist costs one tick of participation, not the mind.</p></div>
       <div class="phase"><span class="n">5</span><h3>Auction</h3><p>Each bid is scored: salience × novelty × ¬habituation × goal-relevance, with <b>coalitions</b> pooling strength. The formula is below — try it.</p></div>
       <div class="phase hot"><span class="n">6</span><h3>Ignition — or idle</h3>
@@ -576,15 +577,15 @@ footer{
 <span class="tl win">      ★ <span class="who">perception/statement</span> <span class="p">p=0.55</span> :: Actually, we've decided to stay on WordPress…</span>
 <span class="tl say">🗣  Noted — I've updated my memory accordingly. Say the word if anything else changed.</span>
 <span class="note"><span class="rose">contradiction detected</span> — the stale belief is reconciled, cross-linked, kept for the record</span>
-<span class="tl slp">t=015 <span class="z">☾ sleep</span>: replayed 24 events, distilled 2 lessons, pruned 0</span>
+<span class="tl slp">t=016 <span class="z">☾ sleep</span>: 2 lessons, 0 pruned</span>
 <span class="tl slp">        ▹ Decisions about planning were revisited; verify current status before advising, since positions can reverse.</span>
 <span class="tl slp">        ▹ Reminders tied to migrate were useful; keep scheduling explicit follow-ups after giving advice.</span>
 <span class="note">six idle ticks triggered consolidation: replay → distill → write → prune</span>
         <div class="ledger-after">
-<span class="tl">— the ledger, after —</span>
-<span class="tl ign">  [<b>0.88</b>] User stated: Actually, we've decided to stay on WordPress rather than migrate.  «user, decision»</span>
-<span class="tl ign">  [<b>0.64</b>] Decisions about planning were revisited; verify current status before advising…  «lesson»</span>
-<span class="tl">  [0.19] Assessment: Consensus view: proceed carefully…  «verdict — divided, so stored weakly, now fading»</span>
+<span class="tl">— the ledger, after (tick 26) —</span>
+<span class="tl ign">  [<b>0.92</b>] User stated: Actually, we've decided to stay on WordPress rather than migrate.  «user, decision»</span>
+<span class="tl ign">  [<b>0.77</b>] Decisions about planning were revisited; verify current status before advising…  «lesson»</span>
+<span class="tl">  [0.28] Assessment: Consensus view: proceed carefully…  «verdict — divided, so stored weakly, now fading»</span>
 <span class="tl"><span class="rose">  [contradicted]</span> User intends: migrate our blog from WordPress to a static site generator.</span>
         </div>
       </div>
@@ -596,18 +597,20 @@ footer{
 <section class="act" id="use">
   <div class="wrap">
     <p class="eyebrow reveal">how to use it</p>
-    <h2 class="reveal">From zip to inner life in four commands.</h2>
+    <h2 class="reveal">From clone to inner life in four commands.</h2>
     <p class="lede reveal">Python 3.11+ and nothing else. The mock cortex is deterministic, so the demo below reproduces byte-for-byte.</p>
 
     <div class="steps reveal">
       <div class="step">
         <div class="step-head"><span class="sn">i</span><h4>Watch a life</h4></div>
-        <p>A scripted 26-tick day — the trace above — plus the 37-test suite.</p>
-        <div class="code"><button class="copy" data-c="unzip limen.zip && cd limen
+        <p>A scripted 26-tick day — the trace above — plus the 84-test suite and an offline ablation matrix: what does each mechanism buy?</p>
+        <div class="code"><button class="copy" data-c="git clone https://github.com/bwcummings1/limen.git && cd limen
 python -m limen demo
-python -m unittest discover -s tests">copy</button><span class="pr">$</span> unzip limen.zip <span class="kw">&amp;&amp;</span> cd limen
+python -m unittest discover -s tests
+python -m evals.run">copy</button><span class="pr">$</span> git clone https://github.com/bwcummings1/limen.git <span class="kw">&amp;&amp;</span> cd limen
 <span class="pr">$</span> python -m limen demo
-<span class="pr">$</span> python -m unittest discover -s tests   <span class="cm"># 37 tests, &lt; 1s</span></div>
+<span class="pr">$</span> python -m unittest discover -s tests   <span class="cm"># 84 tests, &lt; 1s</span>
+<span class="pr">$</span> python -m evals.run   <span class="cm"># ablations: no habituation ⇒ rumination</span></div>
       </div>
 
       <div class="step">
@@ -622,19 +625,27 @@ python -m limen inspect beliefs">copy</button><span class="pr">$</span> python -
 
       <div class="step">
         <div class="step-head"><span class="sn">iii</span><h4>Give it a real cortex</h4></div>
-        <p>One env var, one config line. Budget caps, retries, and caching are already wired.</p>
+        <p>One env var, one config line. Budget caps, retries, caching, and per-purpose model routing are already wired — cheap models for the persona forks, a strong one where memory gets written.</p>
         <div class="code"><button class="copy" data-c="export ANTHROPIC_API_KEY=sk-ant-…">copy</button><span class="pr">$</span> export ANTHROPIC_API_KEY=sk-ant-…
 
-<span class="cm"># limen.toml</span>
+<span class="cm"># limen.toml — the payload auto-adapts per model generation</span>
 <span class="kw">[provider]</span>
 kind  = <span class="st">"anthropic"</span>
-model = <span class="st">"claude-sonnet-4-6"</span></div>
+model = <span class="st">"claude-opus-4-8"</span>
+
+<span class="kw">[provider.models]</span>          <span class="cm"># optional routing by purpose</span>
+oracle = <span class="st">"claude-haiku-4-5"</span></div>
       </div>
 
       <div class="step">
         <div class="step-head"><span class="sn">iv</span><h4>Let it live</h4></div>
-        <p>The daemon maps ticks onto wall time; state persists and reloads across restarts.</p>
-        <div class="code"><button class="copy" data-c="python -m limen daemon --period 5">copy</button><span class="pr">$</span> python -m limen daemon --period 5   <span class="cm"># one tick / 5s · Ctrl-C to stop</span></div>
+        <p>The daemon maps ticks onto wall time; state persists across restarts. Point the senses at the world and the auction triages what arrives.</p>
+        <div class="code"><button class="copy" data-c="python -m limen daemon --period 5">copy</button><span class="cm"># limen.toml</span>
+<span class="kw">[sensors]</span>
+watch_dirs = [<span class="st">"~/notes/inbox"</span>]   <span class="cm"># file changes become percepts</span>
+rss_feeds  = [<span class="st">"https://…/feed.xml"</span>]
+
+<span class="pr">$</span> python -m limen daemon --period 5   <span class="cm"># one tick / 5s · Ctrl-C to stop</span></div>
       </div>
 
       <div class="step wide">
@@ -680,8 +691,8 @@ replies, trace = mind.run_until_response()   <span class="cm"># a custom special
 <footer>
   <div class="wrap foot">
     <span class="word">LIMEN</span>
-    <span class="l">57 files · 37 tests · 8 docs · 0 dependencies</span>
-    <span>MIT · <span class="l">python -m limen demo</span></span>
+    <span class="l">62 files · 84 tests · 9 docs · 0 dependencies</span>
+    <span>MIT · <a href="https://github.com/bwcummings1/limen">github.com/bwcummings1/limen</a></span>
   </div>
 </footer>
 
