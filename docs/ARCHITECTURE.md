@@ -1,9 +1,9 @@
 # LIMEN Architecture
 
 This document specifies exactly how a LIMEN mind works — every phase of the
-cognitive cycle, every datatype crossing a boundary, every formula. Reading
-order: this file, then [MEMORY.md](MEMORY.md), then
-[SPECIALISTS.md](SPECIALISTS.md).
+cognitive cycle, every datatype crossing a boundary, every formula. For the
+picture version first, see [DIAGRAM.md](DIAGRAM.md). Reading order: this
+file, then [MEMORY.md](MEMORY.md), then [SPECIALISTS.md](SPECIALISTS.md).
 
 ## 1. The three datatypes (`limen/bus.py`)
 

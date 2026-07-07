@@ -152,6 +152,7 @@ watch_dirs = ["~/notes/inbox"]   # optional: the world, arriving as percepts
 
 | Doc | Contents |
 |---|---|
+| [docs/DIAGRAM.md](docs/DIAGRAM.md) | The whole machine in ASCII: the funnel, a four-tick answer, the feedback loops |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | The tick, step by step; every data flow; module map |
 | [docs/THEORY.md](docs/THEORY.md) | GWT → code mapping; what this is and is *not* a claim about |
 | [docs/MEMORY.md](docs/MEMORY.md) | Schemas and the exact decay / reinforcement / contradiction math |
