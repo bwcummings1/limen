@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# LIMEN state directories (each is a mind's persistent memory)
+.limen/
+limen-demo/
+limen-example*/
+
+# Eval outputs
+evals/results/
+*.results.json
+
+# OS noise
+.DS_Store

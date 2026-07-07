@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "limen"
+version = "1.0.0"
+description = "A Global Workspace Theory runtime for LLM agents. Zero dependencies."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "LIMEN project" }]
+keywords = ["agents", "llm", "global-workspace-theory", "cognitive-architecture"]
+dependencies = []   # the whole point
+
+[project.urls]
+Repository = "https://github.com/bwcummings1/limen"
+Issues = "https://github.com/bwcummings1/limen/issues"
+Documentation = "https://github.com/bwcummings1/limen/tree/main/docs"
+
+[project.scripts]
+limen = "limen.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["limen*"]

@@ -1,0 +1,32 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      # Zero dependencies — nothing to install. That's the point.
+      - name: Unit + integration tests
+        run: python -m unittest discover -s tests -v
+      - name: Eval smoke (offline ablation matrix, one scenario)
+        run: python -m evals.run --scenarios rumination --arms full,no_habituation --seeds 7
+      - name: Package installs and ticks
+        run: |
+          pip install .
+          python -c "
+          import tempfile
+          from limen import Config, Mind
+          cfg = Config(); cfg.provider.kind = 'mock'
+          cfg.mind.data_dir = tempfile.mkdtemp()
+          r = Mind.from_config(cfg).tick()
+          print('tick OK:', r.tick)"

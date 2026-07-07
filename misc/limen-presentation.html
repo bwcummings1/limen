@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIMEN — a Global Workspace runtime for LLM agents</title>
+<meta name="description" content="LIMEN implements Global Workspace Theory as running code: specialists bid, a threshold decides, winners are broadcast. An inner life assembled from cron jobs and JSON files.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ————————————————————————————— tokens ————————————————————————————— */
+:root{
+  --night:#131120;          /* deep indigo, the sub-liminal field        */
+  --night-lift:#181530;
+  --panel:#1b1832;
+  --panel-2:#221e3f;
+  --line:#2f2a52;
+  --line-soft:#262244;
+  --sub-dim:#565177;        /* thoughts that never made it                */
+  --sub:#8d87bd;            /* the unconscious register                   */
+  --ink:#d8d4f0;            /* body reading color                         */
+  --bright:#f5f3ff;         /* conscious content                          */
+  --gold:#eeb45f;           /* ignition                                   */
+  --gold-bright:#ffd58c;
+  --gold-deep:#a67c33;
+  --gold-glow:rgba(238,180,95,.32);
+  --rose:#cf8598;           /* contradiction marks, used once             */
+  --serif:"Fraunces",Georgia,serif;
+  --sans:"Instrument Sans",system-ui,sans-serif;
+  --mono:"Spline Sans Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --w:1060px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--night);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:17px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+::selection{background:var(--gold-deep);color:var(--night)}
+a{color:var(--gold-bright);text-decoration:none;border-bottom:1px solid var(--gold-deep)}
+a:hover{border-bottom-color:var(--gold-bright)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:2px}
+
+/* ————————————————————————————— shared ————————————————————————————— */
+.wrap{max-width:var(--w);margin:0 auto;padding:0 28px}
+.act{padding:110px 0 30px}
+.eyebrow{
+  font-family:var(--mono);font-size:12px;letter-spacing:.28em;
+  text-transform:uppercase;color:var(--gold);opacity:.85;
+  display:flex;align-items:center;gap:14px;margin-bottom:26px;
+}
+.eyebrow::after{content:"";height:1px;flex:0 0 56px;background:linear-gradient(90deg,var(--gold-deep),transparent)}
+h2{
+  font-family:var(--serif);font-weight:400;font-size:clamp(30px,4.4vw,46px);
+  line-height:1.14;color:var(--bright);letter-spacing:-.01em;
+  max-width:19em;margin-bottom:22px;
+}
+h2 em{font-style:italic;color:var(--gold-bright)}
+.lede{max-width:44em;font-size:clamp(17px,1.6vw,19px);color:var(--ink)}
+.lede + .lede{margin-top:14px}
+.dim{color:var(--sub)}
+.mono{font-family:var(--mono)}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .reveal{opacity:1;transform:none;transition:none}
+}
+
+/* ————————————————————————————— hero ————————————————————————————— */
+.hero{
+  position:relative;min-height:100svh;
+  display:flex;flex-direction:column;justify-content:center;
+  overflow:hidden;
+  background:
+    radial-gradient(1100px 520px at 50% 118%, #1e1a3a 0%, transparent 62%),
+    radial-gradient(900px 420px at 82% -8%, #171332 0%, transparent 60%),
+    var(--night);
+}
+#bids{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.threshold{
+  position:absolute;left:0;right:0;top:38%;height:0;
+  border-top:1px solid rgba(238,180,95,.38);
+  box-shadow:0 0 22px 1px rgba(238,180,95,.18);
+  pointer-events:none;
+}
+.threshold::before,.threshold::after{content:"";position:absolute;top:-1px;height:1px;width:18%;}
+.threshold::before{left:0;background:linear-gradient(90deg,var(--night),transparent)}
+.threshold::after{right:0;background:linear-gradient(270deg,var(--night),transparent)}
+.threshold-label{
+  position:absolute;right:28px;top:calc(38% + 10px);
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;
+  color:var(--sub);text-transform:uppercase;
+}
+.threshold-label b{color:var(--gold);font-weight:500}
+.hero-inner{position:relative;text-align:center;padding:0 24px;margin-top:6vh}
+.hero-word{
+  font-family:var(--serif);font-weight:300;
+  font-size:clamp(72px,15vw,190px);
+  letter-spacing:.06em;line-height:1;
+  color:var(--sub-dim);
+  filter:blur(7px);opacity:.5;
+  transition:color 1.4s ease,filter 1.4s ease,opacity 1.4s ease,text-shadow 1.4s ease;
+}
+.hero-def,.hero-tag,.hero-chips,.scroll-cue{
+  opacity:0;transform:translateY(10px);
+  transition:opacity 1s ease .25s,transform 1s ease .25s;
+}
+body.lit .hero-word{
+  color:var(--bright);filter:blur(0);opacity:1;
+  text-shadow:0 0 34px var(--gold-glow),0 0 110px rgba(238,180,95,.14);
+}
+body.lit .hero-def,body.lit .hero-tag,body.lit .hero-chips,body.lit .scroll-cue{opacity:1;transform:none}
+.hero-def{
+  font-family:var(--serif);font-style:italic;font-weight:300;
+  font-size:clamp(17px,2.2vw,22px);color:var(--sub);
+  max-width:34em;margin:26px auto 0;line-height:1.55;
+}
+.hero-def b{color:var(--gold-bright);font-weight:500;font-style:normal}
+.hero-tag{
+  margin:20px auto 0;max-width:36em;
+  font-size:clamp(15px,1.7vw,17.5px);color:var(--ink);
+}
+.hero-chips{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:34px}
+.chip{
+  font-family:var(--mono);font-size:12.5px;letter-spacing:.04em;
+  color:var(--sub);border:1px solid var(--line);border-radius:100px;
+  padding:7px 15px;background:rgba(27,24,50,.5);
+}
+.chip.cta{color:var(--gold-bright);border-color:var(--gold-deep)}
+.scroll-cue{
+  position:absolute;left:50%;bottom:26px;transform:translateX(-50%);
+  color:var(--sub-dim);font-family:var(--mono);font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;text-align:center;
+}
+.scroll-cue span{display:block;font-size:16px;margin-top:6px;animation:cue 2.4s ease-in-out infinite}
+@keyframes cue{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(6px);opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  .hero-word{transition:none;filter:none;opacity:1;color:var(--bright);text-shadow:0 0 34px var(--gold-glow)}
+  .hero-def,.hero-tag,.hero-chips,.scroll-cue{transition:none;opacity:1;transform:none}
+  .scroll-cue span{animation:none}
+}
+
+/* ————————————————————————— claim strip ————————————————————————— */
+.mapping{
+  margin-top:54px;border:1px solid var(--line-soft);border-radius:14px;
+  background:linear-gradient(180deg,var(--panel) 0%,rgba(27,24,50,.4) 100%);
+  display:grid;grid-template-columns:repeat(3,1fr);
+}
+.mapping div{padding:22px 26px;border-left:1px solid var(--line-soft)}
+.mapping div:first-child{border-left:none}
+.mapping .k{font-family:var(--mono);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--sub);margin-bottom:8px}
+.mapping .v{font-family:var(--serif);font-size:19px;color:var(--bright);line-height:1.35}
+.mapping .v i{color:var(--gold-bright)}
+
+/* ————————————————————————— the tick rail ————————————————————————— */
+.tick{margin-top:56px;position:relative;padding-left:64px}
+.tick::before{
+  content:"";position:absolute;left:19px;top:14px;bottom:14px;width:1px;
+  background:linear-gradient(180deg,transparent,var(--line) 6%,var(--line) 94%,transparent);
+}
+.phase{position:relative;padding:0 0 34px}
+.phase:last-child{padding-bottom:0}
+.phase .n{
+  position:absolute;left:-64px;top:-2px;width:40px;height:40px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:13px;color:var(--sub);
+  background:var(--night);border:1px solid var(--line);
+}
+.phase h3{
+  font-family:var(--mono);font-weight:500;font-size:14px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--bright);
+  margin-bottom:6px;
+}
+.phase p{max-width:46em;color:var(--sub);font-size:15.5px}
+.phase p b{color:var(--ink);font-weight:500}
+.phase.hot .n{color:var(--night);background:var(--gold);border-color:var(--gold);box-shadow:0 0 18px var(--gold-glow)}
+.phase.hot h3{color:var(--gold-bright)}
+.fork{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px;max-width:52em;
+}
+.fork div{border:1px solid var(--line-soft);border-radius:10px;padding:16px 18px;background:rgba(27,24,50,.45)}
+.fork .f-t{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px}
+.fork .ignite .f-t{color:var(--gold-bright)}
+.fork .idle .f-t{color:var(--sub-dim)}
+.fork p{font-size:14.5px;color:var(--sub);max-width:none}
+.fork .ignite{border-color:rgba(238,180,95,.35);background:linear-gradient(180deg,rgba(238,180,95,.06),rgba(27,24,50,.45))}
+
+/* ————————————————————————— auction lab ————————————————————————— */
+.formula{
+  font-family:var(--mono);font-size:clamp(13px,1.8vw,16.5px);
+  color:var(--ink);background:var(--panel);border:1px solid var(--line-soft);
+  border-radius:12px;padding:22px 26px;margin:40px 0 0;overflow-x:auto;
+  line-height:1.9;white-space:nowrap;
+}
+.formula .op{color:var(--sub-dim)} .formula .t{color:var(--gold-bright)} .formula .c{color:var(--sub)}
+.lab{
+  margin-top:18px;border:1px solid var(--line-soft);border-radius:14px;
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  padding:30px;display:grid;grid-template-columns:1fr 300px;gap:38px;align-items:center;
+}
+.sliders label{
+  display:grid;grid-template-columns:150px 1fr 52px;align-items:center;gap:16px;
+  font-family:var(--mono);font-size:13px;color:var(--sub);padding:9px 0;
+}
+.sliders label b{color:var(--ink);font-weight:500;letter-spacing:.04em}
+.sliders output{color:var(--gold-bright);text-align:right}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,var(--gold) var(--fill,50%),var(--line) var(--fill,50%));
+  cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--gold-bright);border:2px solid var(--night);
+  box-shadow:0 0 10px var(--gold-glow);
+}
+input[type=range]::-moz-range-thumb{
+  width:14px;height:14px;border-radius:50%;background:var(--gold-bright);
+  border:2px solid var(--night);box-shadow:0 0 10px var(--gold-glow);
+}
+.gauge{text-align:center}
+.gauge .big{
+  font-family:var(--serif);font-weight:300;font-size:64px;line-height:1;
+  color:var(--sub-dim);transition:color .35s ease,text-shadow .35s ease;
+}
+.gauge.on .big{color:var(--gold-bright);text-shadow:0 0 26px var(--gold-glow)}
+.gauge .verdict{
+  font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+  margin-top:12px;color:var(--sub-dim);transition:color .35s ease;
+}
+.gauge.on .verdict{color:var(--gold)}
+.track{position:relative;height:4px;background:var(--line);border-radius:4px;margin:22px 4px 6px}
+.track .mark{position:absolute;top:-6px;bottom:-6px;left:25%;width:1px;background:var(--gold);box-shadow:0 0 8px var(--gold-glow)}
+.track .needle{
+  position:absolute;top:50%;width:12px;height:12px;border-radius:50%;
+  transform:translate(-50%,-50%);background:var(--sub);transition:left .25s ease,background .25s ease,box-shadow .25s;
+}
+.gauge.on .needle{background:var(--gold-bright);box-shadow:0 0 12px var(--gold-glow)}
+.track-cap{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--sub-dim);letter-spacing:.1em}
+.lab-note{grid-column:1/-1;font-size:13.5px;color:var(--sub);border-top:1px solid var(--line-soft);padding-top:16px;margin-top:2px}
+.lab-note b{color:var(--ink);font-weight:500}
+
+/* ————————————————————————— grids of cards ————————————————————————— */
+.cards{display:grid;gap:14px;margin-top:44px}
+.cards.c2{grid-template-columns:repeat(2,1fr)}
+.cards.c5{grid-template-columns:repeat(5,1fr)}
+.card{
+  border:1px solid var(--line-soft);border-radius:12px;padding:20px 20px 18px;
+  background:linear-gradient(180deg,rgba(34,30,63,.6),rgba(27,24,50,.35));
+}
+.card h4{
+  font-family:var(--mono);font-weight:500;font-size:13px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--bright);margin-bottom:9px;
+  display:flex;align-items:center;gap:8px;
+}
+.card h4 .llm{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold-glow);flex:none}
+.card p{font-size:14px;color:var(--sub);line-height:1.55}
+.card p b{color:var(--ink);font-weight:500}
+.card .math{
+  font-family:var(--mono);font-size:12.5px;color:var(--gold-bright);
+  background:rgba(19,17,32,.65);border:1px solid var(--line-soft);border-radius:8px;
+  padding:10px 12px;margin-top:12px;overflow-x:auto;white-space:nowrap;
+}
+.legend{font-family:var(--mono);font-size:12px;color:var(--sub-dim);margin-top:14px;display:flex;align-items:center;gap:8px}
+.legend .llm{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold-glow)}
+
+/* ————————————————————————— trace ————————————————————————— */
+.term{
+  margin-top:46px;border:1px solid var(--line-soft);border-radius:14px;overflow:hidden;
+  background:#0e0c1a;box-shadow:0 30px 70px -30px rgba(0,0,0,.7);
+}
+.term-bar{
+  display:flex;justify-content:space-between;align-items:center;gap:16px;
+  padding:12px 18px;border-bottom:1px solid var(--line-soft);
+  font-family:var(--mono);font-size:12px;color:var(--sub);
+  background:rgba(27,24,50,.55);letter-spacing:.06em;
+}
+.term-bar .live{color:var(--gold);display:flex;align-items:center;gap:8px}
+.term-bar .live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 9px var(--gold-glow)}
+.term-body{padding:22px 24px 26px;font-family:var(--mono);font-size:13.2px;line-height:1.85;overflow-x:auto}
+.tl{display:block;white-space:pre;color:var(--sub)}
+.tl.ign{color:var(--ink)} .tl.ign .z{color:var(--gold-bright)}
+.tl.win{color:var(--sub)} .tl.win .who{color:var(--ink)} .tl.win .p{color:var(--gold-deep)}
+.tl.idl{color:var(--sub-dim);font-style:italic}
+.tl.say{
+  display:block;white-space:pre-wrap;color:var(--gold-bright);
+  background:linear-gradient(90deg,rgba(238,180,95,.09),transparent 78%);
+  border-left:2px solid var(--gold);padding:8px 14px;margin:10px 0;border-radius:0 8px 8px 0;
+}
+.tl.usr{color:var(--bright)}
+.tl.slp{color:var(--sub)} .tl.slp .z{color:#9aa6d8}
+.tl .rose{color:var(--rose)}
+.note{
+  white-space:normal;display:block;color:var(--sub-dim);font-style:italic;font-size:12.3px;
+  padding:2px 0 10px 26px;position:relative;
+}
+.note::before{content:"↳";position:absolute;left:8px;color:var(--gold-deep);font-style:normal}
+.ledger-after{margin-top:16px;border-top:1px dashed var(--line);padding-top:14px}
+.ledger-after .tl b{color:var(--gold-bright);font-weight:500}
+
+/* ————————————————————————— use ————————————————————————— */
+.steps{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:44px}
+.step{border:1px solid var(--line-soft);border-radius:12px;background:var(--panel);overflow:hidden}
+.step-head{
+  display:flex;align-items:baseline;gap:14px;padding:16px 20px 0;
+}
+.step-head .sn{font-family:var(--serif);font-style:italic;font-size:20px;color:var(--gold-bright)}
+.step-head h4{font-family:var(--sans);font-weight:600;font-size:15.5px;color:var(--bright);letter-spacing:.01em}
+.step p{padding:8px 20px 0;font-size:14px;color:var(--sub)}
+.code{
+  margin:14px 14px 14px;background:#0e0c1a;border:1px solid var(--line-soft);
+  border-radius:9px;padding:14px 16px;font-family:var(--mono);font-size:12.8px;
+  line-height:1.75;color:var(--ink);overflow-x:auto;position:relative;
+}
+.code .cm{color:var(--sub-dim)} .code .pr{color:var(--gold-deep);user-select:none}
+.code .st{color:var(--gold-bright)} .code .kw{color:var(--sub)}
+.copy{
+  position:absolute;top:8px;right:8px;border:1px solid var(--line);border-radius:6px;
+  background:rgba(27,24,50,.8);color:var(--sub);font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.1em;padding:4px 9px;cursor:pointer;text-transform:uppercase;
+}
+.copy:hover{color:var(--gold-bright);border-color:var(--gold-deep)}
+.step.wide{grid-column:1/-1}
+
+/* ————————————————————————— why ————————————————————————— */
+.payoffs{margin-top:44px;display:grid;grid-template-columns:repeat(2,1fr);gap:0 44px}
+.payoff{padding:22px 0;border-top:1px solid var(--line-soft)}
+.payoff h4{font-family:var(--serif);font-weight:500;font-size:21px;color:var(--gold-bright);margin-bottom:8px}
+.payoff p{font-size:15px;color:var(--sub);max-width:34em}
+.payoff p b{color:var(--ink);font-weight:500}
+.not-box{
+  margin-top:54px;border:1px solid var(--line-soft);border-left:2px solid var(--sub-dim);
+  border-radius:0 12px 12px 0;padding:24px 28px;background:rgba(27,24,50,.4);max-width:56em;
+}
+.not-box h4{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--sub);margin-bottom:10px}
+.not-box p{font-size:14.5px;color:var(--sub);max-width:none}
+.not-box p b{color:var(--ink);font-weight:500}
+.thesis{
+  margin:110px auto 0;text-align:center;max-width:15.4em;
+  font-family:var(--serif);font-weight:300;font-style:italic;
+  font-size:clamp(26px,4vw,42px);line-height:1.3;color:var(--bright);
+}
+.thesis b{color:var(--gold-bright);font-weight:400}
+
+/* ————————————————————————— footer ————————————————————————— */
+footer{
+  margin-top:110px;border-top:1px solid var(--line-soft);
+  padding:34px 0 46px;
+}
+.foot{
+  display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:12px;color:var(--sub-dim);letter-spacing:.08em;
+}
+.foot .l{color:var(--sub)}
+.foot .word{font-family:var(--serif);font-size:15px;letter-spacing:.14em;color:var(--gold-bright)}
+
+/* ————————————————————————— responsive ————————————————————————— */
+@media(max-width:920px){
+  .cards.c5{grid-template-columns:repeat(3,1fr)}
+  .lab{grid-template-columns:1fr}
+  .payoffs{grid-template-columns:1fr}
+}
+@media(max-width:680px){
+  body{font-size:16px}
+  .act{padding:84px 0 20px}
+  .mapping{grid-template-columns:1fr}
+  .mapping div{border-left:none;border-top:1px solid var(--line-soft)}
+  .mapping div:first-child{border-top:none}
+  .cards.c5,.cards.c2{grid-template-columns:repeat(2,1fr)}
+  .steps{grid-template-columns:1fr}
+  .fork{grid-template-columns:1fr}
+  .tick{padding-left:52px}
+  .phase .n{left:-52px;width:34px;height:34px}
+  .tick::before{left:17px}
+  .sliders label{grid-template-columns:120px 1fr 44px;gap:10px}
+  .threshold-label{right:16px}
+}
+@media(max-width:460px){
+  .cards.c5{grid-template-columns:1fr 1fr}
+  .term-body{font-size:11.6px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ HERO ═══════════════════════════ -->
+<header class="hero">
+  <canvas id="bids" aria-hidden="true"></canvas>
+  <div class="threshold" aria-hidden="true"></div>
+  <div class="threshold-label" aria-hidden="true">ignition threshold · <b>0.25</b></div>
+
+  <div class="hero-inner">
+    <h1 class="hero-word" id="heroWord">LIMEN</h1>
+    <p class="hero-def"><b>li·men</b> — noun, psychophysics. The threshold below which a stimulus is not perceived. Content beneath it is, literally, <b>sub-liminal</b>.</p>
+    <p class="hero-tag">A Global Workspace Theory runtime for LLM agents.<br>An inner life assembled from cron jobs and JSON files.</p>
+    <div class="hero-chips">
+      <span class="chip">zero dependencies · pure stdlib</span>
+      <span class="chip">runs &amp; tests offline</span>
+      <a class="chip cta" href="#use">python -m limen demo</a>
+    </div>
+  </div>
+
+  <div class="scroll-cue">the rest is below the threshold<span>↓</span></div>
+</header>
+
+<main>
+<!-- ═══════════════════════════ WHAT ═══════════════════════════ -->
+<section class="act" id="what">
+  <div class="wrap">
+    <p class="eyebrow reveal">what it is</p>
+    <h2 class="reveal">A theory of consciousness, compiled to a runtime.</h2>
+    <p class="lede reveal">Global Workspace Theory — Bernard Baars, 1988 — models the mind as a theater: a vast unconscious audience of parallel specialist processes, a small stage of working memory, and a spotlight of attention. Specialists compete for the stage; whatever wins is <em style="color:var(--gold-bright)">broadcast</em> to everyone. Consciousness, on this view, is the broadcast state.</p>
+    <p class="lede reveal">LIMEN builds exactly that organization around a frozen LLM. Ten specialists bid every tick. An auction scores the bids. A threshold — the limen — decides what ignites into a workspace of roughly a paragraph. Winners are broadcast; everything else never happened, cognitively. Around the loop: four memory systems, a clock with a future, interoceptive self-measurement, and fork-and-merge deliberation.</p>
+
+    <div class="mapping reveal">
+      <div><span class="k">the audience</span><span class="v">10 specialists, bidding <i>in parallel</i></span></div>
+      <div><span class="k">the stage</span><span class="v">≤ 7 items · ≤ 800 tokens · <i>fading</i></span></div>
+      <div><span class="k">the spotlight</span><span class="v">an auction with a <i>threshold</i></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ HOW: THE TICK ═══════════════════════════ -->
+<section class="act" id="how">
+  <div class="wrap">
+    <p class="eyebrow reveal">how it works · the cognitive cycle</p>
+    <h2 class="reveal">Everything the mind does happens inside one loop.</h2>
+    <p class="lede reveal">One tick, nine phases, fixed order. Planning, remembering, speaking, worrying — all of it is content competing for the same small stage.</p>
+
+    <div class="tick reveal">
+      <div class="phase"><span class="n">1</span><h3>Wake</h3><p>Advance the clock. Roll the token-budget day.</p></div>
+      <div class="phase"><span class="n">2</span><h3>Futures</h3><p>The timekeeper fires what is due: reminders, recurrences, tripped <b>dead-man switches</b>. Each arrives as a percept from <b>future_self</b> — a message the mind wrote to a later version of itself.</p></div>
+      <div class="phase"><span class="n">3</span><h3>Sense</h3><p>Drain the inbox. User messages and external events become percepts; everything fresh is logged.</p></div>
+      <div class="phase"><span class="n">4</span><h3>Bid</h3><p>Every specialist runs <b>concurrently</b> on an identical view of the conscious contents and returns proposals. LLM work happens here — its output must then compete for consciousness like everything else. A crashing specialist costs one tick of participation, not the mind.</p></div>
+      <div class="phase"><span class="n">5</span><h3>Auction</h3><p>Each bid is scored: salience × novelty × ¬habituation × goal-relevance, with <b>coalitions</b> pooling strength. The formula is below — try it.</p></div>
+      <div class="phase hot"><span class="n">6</span><h3>Ignition — or idle</h3>
+        <div class="fork">
+          <div class="ignite"><span class="f-t">⚡ top bid ≥ 0.25 · ignition</span><p>Winners fill the workspace (oversized thoughts are truncated to fit — capacity forces abstraction), get logged as broadcasts, and the <b>act phase</b> runs: specialists respond to the newly conscious content through a sandboxed, fully logged toolbelt.</p></div>
+          <div class="idle"><span class="f-t">· top bid &lt; 0.25 · idle</span><p>Nothing becomes conscious. The idle streak grows — feeding the confusion index, waking the mind-wandering specialist, and eventually triggering sleep.</p></div>
+        </div>
+      </div>
+      <div class="phase"><span class="n">7</span><h3>Decay</h3><p>Workspace TTLs age out unrefreshed content after 3 ticks. Habituation fades.</p></div>
+      <div class="phase"><span class="n">8</span><h3>Sleep?</h3><p>Every 24 ticks — or after 6 idle ones — the mind consolidates: replay the episodic log, distill lessons, write them as decaying beliefs, prune the forgotten.</p></div>
+      <div class="phase"><span class="n">9</span><h3>Express</h3><p>Queued speech is handed to the interface layer. The mind proposes utterances; <b>the harness delivers them</b>.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ HOW: THE AUCTION ═══════════════════════════ -->
+<section class="act" id="auction">
+  <div class="wrap">
+    <p class="eyebrow reveal">how it works · the auction</p>
+    <h2 class="reveal">One formula decides what becomes conscious.</h2>
+    <p class="lede reveal">Salience is the specialist's own urgency estimate — trusted, but modulated. Novelty discounts repetition (a mind that can't is a mind that ruminates). Habituation fatigues chronic winners. Goal-relevance is top-down attention. Weak evidence that agrees can outbid strong evidence standing alone.</p>
+
+    <div class="formula reveal">priority <span class="op">=</span> salience <span class="op">×</span> (<span class="t">0.40</span> <span class="op">+</span> <span class="t">0.60</span>·novelty) <span class="op">×</span> (1 <span class="op">−</span> <span class="t">0.70</span>·habituation) <span class="op">×</span> (<span class="t">0.50</span> <span class="op">+</span> <span class="t">0.50</span>·goal) <span class="op">+</span> coalitions   <span class="c">// ignites iff ≥ 0.25</span></div>
+
+    <div class="lab reveal">
+      <div class="sliders">
+        <label><b>salience</b><input type="range" id="s" min="0" max="100" value="90"><output id="so">0.90</output></label>
+        <label><b>novelty</b><input type="range" id="n" min="0" max="100" value="100"><output id="no">1.00</output></label>
+        <label><b>habituation</b><input type="range" id="h" min="0" max="95" value="0"><output id="ho">0.00</output></label>
+        <label><b>goal relevance</b><input type="range" id="g" min="0" max="100" value="50"><output id="go">0.50</output></label>
+      </div>
+      <div class="gauge" id="gauge">
+        <div class="big" id="prio">0.68</div>
+        <div class="track"><span class="mark"></span><span class="needle" id="needle"></span></div>
+        <div class="track-cap"><span>0</span><span>limen 0.25</span><span>1</span></div>
+        <div class="verdict" id="verdict">ignites — broadcast to all</div>
+      </div>
+      <div class="lab-note">Drag <b>habituation</b> up to watch an obsession get structurally ignored, or <b>novelty</b> down to watch a repeated thought fade. These are the shipped defaults from <span class="mono">limen.toml</span>; every weight is yours to tune.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ HOW: THE AUDIENCE ═══════════════════════════ -->
+<section class="act" id="audience">
+  <div class="wrap">
+    <p class="eyebrow reveal">how it works · the audience</p>
+    <h2 class="reveal">Ten specialists. One iron rule: <em>they never talk to each other.</em></h2>
+    <p class="lede reveal">The workspace is the only channel. For one processor to influence another, its content must win the auction and become conscious. That bottleneck isn't an implementation shortcut — it is the theory, and it's what makes the whole mind auditable as a single stream.</p>
+
+    <div class="cards c5 reveal">
+      <div class="card"><h4>perception</h4><p>Classifies raw percepts; extracts “remind me…” into schedulable requests.</p></div>
+      <div class="card"><h4>goals</h4><p>Turns conscious questions into goals; nags when they go stale.</p></div>
+      <div class="card"><h4><span class="llm"></span>planner</h4><p>Drafts a numbered plan when a question is conscious and unplanned.</p></div>
+      <div class="card"><h4><span class="llm"></span>critic</h4><p>Bids the strongest objection against any conscious plan or verdict.</p></div>
+      <div class="card"><h4>librarian</h4><p>Involuntary memory: bids relevant beliefs and skills back onto the stage.</p></div>
+      <div class="card"><h4>introspector</h4><p>Turns interoceptive alarms — confusion, low budget — into percepts.</p></div>
+      <div class="card"><h4><span class="llm"></span>oracle</h4><p>Forks an ensemble on hard questions; reports the verdict with its dissent.</p></div>
+      <div class="card"><h4>scribe</h4><p>Writes conscious verdicts and user decisions into the belief ledger.</p></div>
+      <div class="card"><h4><span class="llm"></span>speaker</h4><p>Drafts replies — and must hear its own draft become conscious before delivering it.</p></div>
+      <div class="card"><h4>wanderer</h4><p>On idle streaks, bids faint random associations. Almost all stay sub-liminal. By design.</p></div>
+    </div>
+    <div class="legend reveal"><span class="llm"></span> thinks with the cortex (LLM-backed) — the rest are pure code</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ HOW: MEMORY ═══════════════════════════ -->
+<section class="act" id="memory">
+  <div class="wrap">
+    <p class="eyebrow reveal">how it works · memory</p>
+    <h2 class="reveal">Append, decay, reinterpret — <em>never silently overwrite.</em></h2>
+
+    <div class="cards c2 reveal">
+      <div class="card"><h4>episodic — what happened</h4>
+        <p>An append-only JSONL autobiography: every broadcast, tool call, alarm, contradiction, and sleep. The stream of consciousness is a file you can grep. The mind never rewrites its history — it reinterprets it.</p></div>
+      <div class="card"><h4>ledger — what is believed</h4>
+        <p>Claims with <b>provenance</b>, tags, status. Nothing is believed without a source. Confidence decays on a half-life; restatement reinforces by noisy-OR; a reversal is <b>reconciled, cross-linked, and kept</b> — the losing belief is marked, never deleted.</p>
+        <div class="math">c(t) = c · 0.5^(Δt / half_life)&nbsp;&nbsp;&nbsp;c′ = 1 − (1−c)(1 − 0.6·c_new)</div></div>
+      <div class="card"><h4>skills — how to do things</h4>
+        <p>Procedures the mind writes for itself as markdown, surfaced back by the librarian when their triggers match the stage. Its competence is partly files it wrote — inspectable, editable, yours.</p></div>
+      <div class="card"><h4>sleep — the process between them</h4>
+        <p>Replay the log → distill through the model at temperature 0 → write lessons as decaying beliefs → prune what fell below the floor. Replay, abstraction, forgetting — consolidation implemented as literally as possible.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ HOW: FEELING & FORKING ═══════════════════════════ -->
+<section class="act" id="self">
+  <div class="wrap">
+    <p class="eyebrow reveal">how it works · self-measurement</p>
+    <h2 class="reveal">It measures its own confusion — then acts on the feeling.</h2>
+    <div class="cards c2 reveal">
+      <div class="card"><h4>interoception</h4>
+        <p>Per-tick vitals: ignition rate, fork disagreement, tool failures, budget remaining. One headline number; threshold crossings re-enter consciousness as alarms, so the mind can hedge, ask, or defer spending <b>because of how it feels</b>.</p>
+        <div class="math">confusion = 0.4·(1−ignition) + 0.4·disagreement + 0.2·failures</div></div>
+      <div class="card"><h4>population — fork, diff, merge</h4>
+        <p>On hard questions the oracle forks persona stances — analyst, skeptic, optimist — in parallel, clusters the answers by meaning, and measures disagreement (a zero-dependency cousin of semantic entropy). The merged verdict <b>keeps the dissent</b>; a divided ensemble is stored weakly and spoken with honest hedging.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ TRACE ═══════════════════════════ -->
+<section class="act" id="trace">
+  <div class="wrap">
+    <p class="eyebrow reveal">see it think</p>
+    <h2 class="reveal">Twenty-six ticks of an inner life — real output, seed 7.</h2>
+    <p class="lede reveal">This is the shipped demo, verbatim: offline, deterministic, no API key. Gold is conscious. Dim is sub-liminal. Annotations are ours.</p>
+
+    <div class="term reveal">
+      <div class="term-bar"><span>$ python -m limen demo</span><span class="live">mind limen-01 · provider mock · seed 7</span></div>
+      <div class="term-body">
+<span class="tl usr">      ▷ user: "I'm planning to migrate our blog from WordPress to a static site generator. Is that a good idea? Also, remind me in a bit to email Dana about the DNS cutover."</span>
+<span class="tl ign">t=001 <span class="z">⚡0.76 ignition</span> (2 bids)</span>
+<span class="tl win">      ★ <span class="who">perception/question</span> <span class="p">p=0.76</span> :: I'm planning to migrate our blog from WordPress…</span>
+<span class="tl win">      ★ <span class="who">perception/reminder_request</span> <span class="p">p=0.66</span> :: Schedule 'email Dana about the DNS cutover' in 6 ticks.</span>
+<span class="note">a coalition: the question and its embedded reminder rise together</span>
+<span class="tl ign">t=002 <span class="z">⚡0.41 ignition</span> (3 bids)</span>
+<span class="tl win">      ★ <span class="who">oracle/verdict</span> <span class="p">p=0.41</span> :: Consensus view… [forks: 3, verdict: deeply divided, disagreement: 0.83]</span>
+<span class="tl win">      ★ <span class="who">planner/plan</span> <span class="p">p=0.41</span> :: PLAN: 1. Clarify the goal… 3. Run the smallest reversible step…</span>
+<span class="tl win">      ★ <span class="who">librarian/memory</span> <span class="p">p=0.31</span> :: Memory (confidence 0.80): User intends: migrate blog…</span>
+<span class="note">three personas forked and split 0.83 — that number now feeds the confusion index</span>
+<span class="tl ign">t=003 <span class="z">⚡0.37 ignition</span></span>
+<span class="tl win">      ★ <span class="who">speaker/utterance_draft</span> <span class="p">p=0.37</span> :: Here's where I've landed on planning…</span>
+<span class="tl win">      ★ <span class="who">critic/risk</span> <span class="p">p=0.29</span> :: RISK: assumes planning is stable, which has not been verified…</span>
+<span class="note">the draft itself had to win the auction — the mind hears itself before speaking</span>
+<span class="tl say">🗣  Here's where I've landed on planning: it looks workable, with one real caveat around migrate. My internal review didn't fully agree, so treat this as a leaning, not a verdict — I'd stage the change and keep a rollback. I've scheduled myself a follow-up to check on this.</span>
+<span class="tl idl">t=004 · idle (top 0.18 &lt; 0.25, 1 bid)</span>
+<span class="tl idl">t=005 · idle (top 0.00 &lt; 0.25)</span>
+<span class="note">that 0.18 was the wanderer — a genuine thought that genuinely never became conscious</span>
+<span class="tl ign">t=007 <span class="z">⚡0.45 ignition</span></span>
+<span class="tl win">      ★ <span class="who">introspector/alarm</span> <span class="p">p=0.45</span> :: confusion index 0.62 (fork disagreement 0.83). Consider gathering more information…</span>
+<span class="tl win">      ★ <span class="who">perception/reminder</span> <span class="p">p=0.38</span> :: Reminder from your past self: email Dana about the DNS cutover</span>
+<span class="tl say">🗣  ⏰ Reminder from your past self: email Dana about the DNS cutover</span>
+<span class="note">nobody prompted this tick — patience and initiative, from the timekeeper and interoception</span>
+<span class="tl usr">      ▷ user: "Actually, we've decided to stay on WordPress rather than migrate."</span>
+<span class="tl ign">t=009 <span class="z">⚡0.55 ignition</span></span>
+<span class="tl win">      ★ <span class="who">perception/statement</span> <span class="p">p=0.55</span> :: Actually, we've decided to stay on WordPress…</span>
+<span class="tl say">🗣  Noted — I've updated my memory accordingly. Say the word if anything else changed.</span>
+<span class="note"><span class="rose">contradiction detected</span> — the stale belief is reconciled, cross-linked, kept for the record</span>
+<span class="tl slp">t=015 <span class="z">☾ sleep</span>: replayed 24 events, distilled 2 lessons, pruned 0</span>
+<span class="tl slp">        ▹ Decisions about planning were revisited; verify current status before advising, since positions can reverse.</span>
+<span class="tl slp">        ▹ Reminders tied to migrate were useful; keep scheduling explicit follow-ups after giving advice.</span>
+<span class="note">six idle ticks triggered consolidation: replay → distill → write → prune</span>
+        <div class="ledger-after">
+<span class="tl">— the ledger, after —</span>
+<span class="tl ign">  [<b>0.88</b>] User stated: Actually, we've decided to stay on WordPress rather than migrate.  «user, decision»</span>
+<span class="tl ign">  [<b>0.64</b>] Decisions about planning were revisited; verify current status before advising…  «lesson»</span>
+<span class="tl">  [0.19] Assessment: Consensus view: proceed carefully…  «verdict — divided, so stored weakly, now fading»</span>
+<span class="tl"><span class="rose">  [contradicted]</span> User intends: migrate our blog from WordPress to a static site generator.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ USE ═══════════════════════════ -->
+<section class="act" id="use">
+  <div class="wrap">
+    <p class="eyebrow reveal">how to use it</p>
+    <h2 class="reveal">From zip to inner life in four commands.</h2>
+    <p class="lede reveal">Python 3.11+ and nothing else. The mock cortex is deterministic, so the demo below reproduces byte-for-byte.</p>
+
+    <div class="steps reveal">
+      <div class="step">
+        <div class="step-head"><span class="sn">i</span><h4>Watch a life</h4></div>
+        <p>A scripted 26-tick day — the trace above — plus the 37-test suite.</p>
+        <div class="code"><button class="copy" data-c="unzip limen.zip && cd limen
+python -m limen demo
+python -m unittest discover -s tests">copy</button><span class="pr">$</span> unzip limen.zip <span class="kw">&amp;&amp;</span> cd limen
+<span class="pr">$</span> python -m limen demo
+<span class="pr">$</span> python -m unittest discover -s tests   <span class="cm"># 37 tests, &lt; 1s</span></div>
+      </div>
+
+      <div class="step">
+        <div class="step-head"><span class="sn">ii</span><h4>Talk to it</h4></div>
+        <p>Your lines become stimuli. Watch bids with <span class="mono">--trace</span>; let it idle with <span class="mono">/tick</span>.</p>
+        <div class="code"><button class="copy" data-c="python -m limen run
+python -m limen ask &quot;Should we rewrite billing in Rust?&quot; --trace
+python -m limen inspect beliefs">copy</button><span class="pr">$</span> python -m limen run
+<span class="pr">$</span> python -m limen ask <span class="st">"Should we rewrite billing in Rust?"</span> --trace
+<span class="pr">$</span> python -m limen inspect beliefs   <span class="cm"># …workspace | metrics | episodic</span></div>
+      </div>
+
+      <div class="step">
+        <div class="step-head"><span class="sn">iii</span><h4>Give it a real cortex</h4></div>
+        <p>One env var, one config line. Budget caps, retries, and caching are already wired.</p>
+        <div class="code"><button class="copy" data-c="export ANTHROPIC_API_KEY=sk-ant-…">copy</button><span class="pr">$</span> export ANTHROPIC_API_KEY=sk-ant-…
+
+<span class="cm"># limen.toml</span>
+<span class="kw">[provider]</span>
+kind  = <span class="st">"anthropic"</span>
+model = <span class="st">"claude-sonnet-4-6"</span></div>
+      </div>
+
+      <div class="step">
+        <div class="step-head"><span class="sn">iv</span><h4>Let it live</h4></div>
+        <p>The daemon maps ticks onto wall time; state persists and reloads across restarts.</p>
+        <div class="code"><button class="copy" data-c="python -m limen daemon --period 5">copy</button><span class="pr">$</span> python -m limen daemon --period 5   <span class="cm"># one tick / 5s · Ctrl-C to stop</span></div>
+      </div>
+
+      <div class="step wide">
+        <div class="step-head"><span class="sn">v</span><h4>Or embed it — the whole mind is one object</h4></div>
+        <div class="code"><button class="copy" data-c="from limen import Mind
+
+mind = Mind.from_config(&quot;limen.toml&quot;)
+mind.stimulate(&quot;Should we migrate the blog?&quot;)
+replies, trace = mind.run_until_response()">copy</button><span class="kw">from</span> limen <span class="kw">import</span> Mind
+
+mind = Mind.from_config(<span class="st">"limen.toml"</span>)
+mind.stimulate(<span class="st">"Should we migrate the blog?"</span>)
+replies, trace = mind.run_until_response()   <span class="cm"># a custom specialist is ~20 lines — see docs/SPECIALISTS.md</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ WHY ═══════════════════════════ -->
+<section class="act" id="why">
+  <div class="wrap">
+    <p class="eyebrow reveal">why</p>
+    <h2 class="reveal">The model already thinks. The loop gives it a life.</h2>
+    <p class="lede reveal">A request–response model has no future, no past, no self-measure, and no second opinion. Every one of those is scaffolding — and scaffolding is buildable. This is what the loop buys:</p>
+
+    <div class="payoffs reveal">
+      <div class="payoff"><h4>Patience</h4><p>Intentions persist across ticks and restarts. <b>“Remind me in a bit”</b> becomes a message from your past self that fires on time, unprompted.</p></div>
+      <div class="payoff"><h4>Initiative</h4><p>Dead-man switches trigger on <b>absence</b> — no heartbeat, no check-in — so silence itself can wake the mind.</p></div>
+      <div class="payoff"><h4>Memory with provenance</h4><p>Every belief has sources, a half-life, and an audit trail. Reversals are reconciled in the open; the losing side stays on the record.</p></div>
+      <div class="payoff"><h4>Calibrated self-doubt</h4><p>Fork disagreement is measured, not vibed — it flows into stored confidence and honest hedging. A divided mind <b>says so</b>.</p></div>
+    </div>
+
+    <div class="not-box reveal">
+      <h4>what LIMEN is not</h4>
+      <p>It is not a claim that anything here is conscious. It implements the <b>functional organization</b> GWT describes — parallel specialists, a capacity-limited broadcast bottleneck, ignition, habituation, sleep. Whether that organization suffices for experience is the hard problem, and a few hundred lines of Python does not settle it. Not a brain model either: ticks aren't milliseconds, and seven items is a homage, not a measurement. The intelligence is rented; the architecture is the contribution.</p>
+    </div>
+
+    <p class="thesis reveal">Most of what we call an inner life is an <b>operating system</b> — and operating systems are buildable.</p>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span class="word">LIMEN</span>
+    <span class="l">57 files · 37 tests · 8 docs · 0 dependencies</span>
+    <span>MIT · <span class="l">python -m limen demo</span></span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ——— hero: bids rising toward the limen ——— */
+  var canvas = document.getElementById("bids");
+  if (reduced) {
+    document.body.classList.add("lit");
+    canvas.remove();
+  } else {
+    var ctx = canvas.getContext("2d"), W, H, dpr, LINE;
+    function size(){
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = canvas.clientWidth; H = canvas.clientHeight;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      LINE = H * 0.38;
+    }
+    size(); window.addEventListener("resize", size);
+
+    var dots = [], t0 = performance.now(), litFired = false;
+    function spawn(now, forceCross){
+      var cross = forceCross || Math.random() < 0.14;
+      var peak = cross ? LINE - (30 + Math.random() * 60)
+                       : LINE + 26 + Math.random() * (H - LINE - 70);
+      dots.push({
+        x: 40 + Math.random() * (W - 80),
+        born: now,
+        dur: 3800 + Math.random() * 2600,
+        peak: peak, cross: cross, flashed: false,
+        drift: (Math.random() - 0.5) * 26,
+        r: 1.4 + Math.random() * 1.6
+      });
+    }
+    var next = t0 + 500;
+    function frame(now){
+      ctx.clearRect(0, 0, W, H);
+      if (now >= next && dots.length < 15){
+        spawn(now, !litFired && now - t0 > 1100);
+        next = now + 420 + Math.random() * 700;
+      }
+      for (var i = dots.length - 1; i >= 0; i--){
+        var d = dots[i], p = (now - d.born) / d.dur;
+        if (p >= 1){ dots.splice(i, 1); continue; }
+        var rise = Math.sin(p * Math.PI);            // up, then settle back
+        var y = H - 30 - (H - 30 - d.peak) * rise;
+        var x = d.x + d.drift * p;
+        var above = y < LINE;
+        if (d.cross && above && !d.flashed){
+          d.flashed = true;
+          if (!litFired){ litFired = true; document.body.classList.add("lit"); }
+        }
+        var a = Math.sin(p * Math.PI) * (above ? 0.95 : 0.5);
+        if (above){
+          var g = ctx.createRadialGradient(x, y, 0, x, y, 16);
+          g.addColorStop(0, "rgba(255,213,140," + (a * 0.5) + ")");
+          g.addColorStop(1, "rgba(255,213,140,0)");
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(x, y, 16, 0, 7); ctx.fill();
+          ctx.fillStyle = "rgba(255,220,160," + a + ")";
+        } else {
+          ctx.fillStyle = "rgba(141,135,189," + a + ")";
+        }
+        ctx.beginPath(); ctx.arc(x, y, d.r, 0, 7); ctx.fill();
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    setTimeout(function(){ document.body.classList.add("lit"); }, 2600); // guarantee
+  }
+
+  /* ——— scroll reveals ——— */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll(".reveal").forEach(function(el){ io.observe(el); });
+
+  /* ——— auction lab ——— */
+  var S = document.getElementById("s"), N = document.getElementById("n"),
+      Hh = document.getElementById("h"), G = document.getElementById("g"),
+      outs = { s: document.getElementById("so"), n: document.getElementById("no"),
+               h: document.getElementById("ho"), g: document.getElementById("go") },
+      prio = document.getElementById("prio"), needle = document.getElementById("needle"),
+      verdict = document.getElementById("verdict"), gauge = document.getElementById("gauge");
+  function fill(el){ el.style.setProperty("--fill", (el.value / el.max * 100) + "%"); }
+  function calc(){
+    var s = S.value / 100, n = N.value / 100, h = Hh.value / 100, g = G.value / 100;
+    outs.s.textContent = s.toFixed(2); outs.n.textContent = n.toFixed(2);
+    outs.h.textContent = h.toFixed(2); outs.g.textContent = g.toFixed(2);
+    var p = s * (0.40 + 0.60 * n) * (1 - 0.70 * h) * (0.50 + 0.50 * g);
+    prio.textContent = p.toFixed(2);
+    needle.style.left = Math.min(p, 1) * 100 + "%";
+    var on = p >= 0.25;
+    gauge.classList.toggle("on", on);
+    verdict.textContent = on ? "ignites — broadcast to all" : "sub-liminal — this tick idles";
+    [S, N, Hh, G].forEach(fill);
+  }
+  [S, N, Hh, G].forEach(function(el){ el.addEventListener("input", calc); });
+  calc();
+
+  /* ——— copy buttons ——— */
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var text = btn.getAttribute("data-c");
+      function done(){ btn.textContent = "copied";
+        setTimeout(function(){ btn.textContent = "copy"; }, 1400); }
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done, function(){ fallback(); });
+      } else { fallback(); }
+      function fallback(){
+        var ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); done(); } catch(e){}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

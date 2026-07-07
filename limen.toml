@@ -1,0 +1,75 @@
+# LIMEN configuration — every key documented in docs/CONFIGURATION.md.
+# Delete any section to accept defaults; unknown keys raise at load.
+
+[mind]
+name = "limen-01"
+data_dir = ".limen"      # all persistent state (memories, cache, notes)
+seed = 7                 # deterministic runs; comment out for entropy
+
+[workspace]
+capacity_tokens = 800    # the size of consciousness
+max_items = 7
+item_ttl = 3
+
+[attention]
+ignition_threshold = 0.25
+novelty_floor = 0.40
+habituation_strength = 0.70
+goal_floor = 0.50
+habituation_gain = 0.25
+habituation_decay = 0.90
+coalition_bonus = 0.15
+
+[budget]
+tokens_per_day = 200000
+day_ticks = 96
+hard_stop = true
+
+[provider]
+kind = "mock"            # "anthropic" for a real cortex (needs ANTHROPIC_API_KEY)
+model = "claude-opus-4-8"  # payload auto-adapts per model generation; cheaper
+                           # options: "claude-sonnet-4-6", "claude-haiku-4-5"
+max_tokens = 400
+temperature = 0.7
+cache = true
+
+# Optional per-purpose model routing: any purpose not listed uses `model`.
+# Purposes: planner, critic, speaker, oracle, oracle_merge, consolidation.
+# [provider.models]
+# oracle = "claude-haiku-4-5"          # cheap parallel persona forks
+# critic = "claude-haiku-4-5"
+# consolidation = "claude-opus-4-8"    # sleep writes long-term memory
+
+[embeddings]
+kind = "none"            # "none" (stdlib heuristic) | "openai" (any
+                         # OpenAI-compatible /v1/embeddings server: LM Studio,
+                         # llama-server, vLLM, Ollama's /v1) | "voyage" (needs
+                         # VOYAGE_API_KEY) | "ollama" (native API, legacy).
+                         # Upgrades ALL similarity: attention novelty, belief
+                         # merging, clustering, retrieval. See docs.
+# base_url = "http://localhost:11434/v1"   # required for kind = "openai"
+# model = "nomic-embed-text"               # voyage default: voyage-3.5-lite
+# calibration_floor = 0.55                 # cosine rescale floor — model-specific
+
+[sensors]
+watch_dirs = []          # each dir gets a FileWatcher (new/changed files
+                         # become percepts; first run baselines silently)
+rss_feeds = []           # each URL gets an RSSWatcher (digest percepts)
+rss_every_ticks = 12
+
+[sleep]
+every_ticks = 24
+idle_trigger = 6
+max_lessons = 5
+prune_floor = 0.05
+
+[population]
+personas = ["analyst", "skeptic", "optimist"]
+cluster_threshold = 0.62
+min_salience = 0.55
+
+[specialists]
+enabled = [
+  "perception", "goals", "planner", "critic", "librarian",
+  "introspector", "oracle", "scribe", "speaker", "wanderer",
+]
